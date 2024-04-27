@@ -1,9 +1,8 @@
-from decimal import Decimal
-
 from django import forms
 from django.contrib import admin
 
 from properties.models import Property
+from properties.repositories.property_repository import PropertyRepository
 
 
 class PropertyForm(forms.ModelForm):
@@ -45,3 +44,21 @@ class PropertyForm(forms.ModelForm):
 class PropertyAdmin(admin.ModelAdmin):
     list_display = ("reference", "zone", "price", "price_per_m2")
     form = PropertyForm
+    readonly_fields = ("directions",)
+
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+        PropertyRepository(obj).fill_directions()
+
+    def directions(self, obj):
+        note = ""
+        for direction in obj.directions.all():
+            note += f"{direction.location.name}\n"
+            for key, value in direction.route_data["routes"][0].items():
+                if isinstance(value, dict):
+                    value = str(value)
+                note += f"{key}: {value}\n"
+            note += "\n"
+        return note
+
+    directions.short_description = "Directions"
