@@ -1,2 +1,9 @@
 Django==5.0.4
 psycopg2-binary==2.9.3
+googlemaps==4.10.0
+dj-database-url>=2,<3
+gunicorn>=22,<23
+whitenoise[brotli]>=6,<7
+psycopg[c]; sys_platform == "linux"
+psycopg[binary]; sys_platform != "linux"
+requests
