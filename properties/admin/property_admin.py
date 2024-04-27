@@ -1,4 +1,8 @@
+import re
+
+import googlemaps
 from django import forms
+from django.conf import settings
 from django.contrib import admin
 from django.utils.safestring import mark_safe
 
@@ -20,6 +24,14 @@ class PropertyForm(forms.ModelForm):
 
     def clean_position(self):
         position = self.cleaned_data["position"]
+        if re.match(r"\b[\w]{2,4}\+[\w]{2,4}\b(?:\s+[A-Za-z\s]+)?", position):
+            gmaps = googlemaps.Client(key=settings.GOOGLE_MAPS_API_KEY)
+            geocode = gmaps.geocode(position)
+            return "{},{}".format(
+                geocode[0]["geometry"]["location"]["lat"],
+                geocode[0]["geometry"]["location"]["lng"],
+            )
+
         return position.replace(" ", "").strip()
 
     def clean(self):
@@ -38,7 +50,39 @@ class PropertyForm(forms.ModelForm):
 
     class Meta:
         model = Property
-        fields = "__all__"
+        fields = (
+            "url",
+            "reference",
+            "position",
+            "m2",
+            "price",
+            "phone",
+            "zone",
+            "condition",
+            "tags",
+            "built_m2",
+            "price_per_m2",
+            "price_per_built_m2",
+            "meters_in_front",
+            "notes",
+        )
+
+
+class TagsListFilter(admin.SimpleListFilter):
+    title = "Tags"
+    parameter_name = "tags"
+
+    def lookups(self, request, model_admin):
+        tags = Property.objects.values_list("tags", flat=True)
+        tags = [(kw, kw) for sublist in tags for kw in sublist if kw]
+        tags = sorted(set(tags))
+        return tags
+
+    def queryset(self, request, queryset):
+        lookup_value = self.value()
+        if lookup_value:
+            queryset = queryset.filter(tags__contains=[lookup_value])
+        return queryset
 
 
 @admin.register(Property)
@@ -52,6 +96,7 @@ class PropertyAdmin(admin.ModelAdmin):
     )
     form = PropertyForm
     readonly_fields = ("directions_explained", "embed_map")
+    list_filter = ("zone", "condition", TagsListFilter)
 
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)

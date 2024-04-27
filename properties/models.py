@@ -24,6 +24,13 @@ class Location(models.Model):
         return self.position.split(",")[1]
 
 
+class Zone(models.Model):
+    name = models.CharField(verbose_name=_("Name"))
+
+    def __str__(self):
+        return self.name
+
+
 class Property(models.Model):
     class Condition(models.TextChoices):
         NEW_HOUSE = "new_house", _("New House")
@@ -36,11 +43,18 @@ class Property(models.Model):
         AVENUE = "avenue", _("Avenue")
         GATED_COMMUNITY = "gated_community", _("Gated Community")
         ASPHALT = "asphalt", _("Asphalt")
+        DIRT_ROAD = "dirt_road", _("Dirt Road")
 
     reference = models.CharField(verbose_name=_("Reference"))
     phone = models.CharField(null=True, blank=True, verbose_name=_("Phone"))
     position = models.CharField(verbose_name=_("Position"))
-    zone = models.CharField(null=True, blank=True, verbose_name=_("Zone"))
+    zone = models.ForeignKey(
+        Zone,
+        on_delete=models.RESTRICT,
+        related_name="properties",
+        verbose_name=_("Zone"),
+        null=True,
+    )
     condition = models.CharField(
         choices=Condition.choices,
         default=Condition.OLD_HOUSE,
@@ -89,6 +103,7 @@ class Property(models.Model):
     )
 
     notes = models.TextField(null=True, blank=True, verbose_name=_("Notes"))
+    url = models.URLField(null=True, blank=True, verbose_name=_("URL"))
 
     @property
     def latitude(self):
