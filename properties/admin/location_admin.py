@@ -18,10 +18,10 @@ class LocationForm(forms.ModelForm):
 @admin.register(Location)
 class LocationAdmin(admin.ModelAdmin):
     list_display = ("name", "position", "priority")
-    readonly_fields = ("map",)
+    readonly_fields = ("embed_map",)
     form = LocationForm
 
-    def map(self, obj):
+    def embed_map(self, obj):
         return mark_safe(
             f"""
             <iframe 
@@ -34,3 +34,5 @@ class LocationAdmin(admin.ModelAdmin):
             </iframe>
         """
         )
+
+    embed_map.short_description = "Map"
